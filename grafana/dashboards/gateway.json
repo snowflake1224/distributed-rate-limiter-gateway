@@ -1,0 +1,165 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Request rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(gateway_http_requests_total[1m])) by (instance, status)",
+          "legendFormat": "{{instance}} {{status}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Allowed vs rejected",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(gateway_ratelimit_allowed_total[1m]))",
+          "legendFormat": "allowed"
+        },
+        {
+          "expr": "sum(rate(gateway_ratelimit_rejected_total[1m]))",
+          "legendFormat": "rejected"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Gateway latency p50/p95/p99",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(gateway_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Redis / decision latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_redis_latency_seconds_bucket[1m])) by (le, command))",
+          "legendFormat": "redis p95 {{command}}"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(gateway_ratelimit_decision_duration_seconds_bucket[1m])) by (le, algorithm))",
+          "legendFormat": "decision p95 {{algorithm}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "id": 5,
+      "title": "Policy cache hits vs misses",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(gateway_policy_cache_hits_total[1m]))",
+          "legendFormat": "hits"
+        },
+        {
+          "expr": "sum(rate(gateway_policy_cache_misses_total[1m]))",
+          "legendFormat": "misses"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "id": 6,
+      "title": "Circuit breaker state",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "gateway_circuit_breaker_state",
+          "legendFormat": "{{upstream}} {{instance}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "id": 7,
+      "title": "Event-loop lag",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "gateway_eventloop_lag_seconds",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 8,
+      "title": "Upstream failures",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(gateway_upstream_failures_total[1m])) by (upstream, reason)",
+          "legendFormat": "{{upstream}} {{reason}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 9,
+      "title": "Active tenants / policies",
+      "type": "stat",
+      "targets": [
+        { "expr": "gateway_active_tenants", "legendFormat": "tenants" },
+        { "expr": "gateway_active_policies", "legendFormat": "policies" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["gateway", "rate-limit"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timezone": "browser",
+  "title": "Distributed Rate Limiter / API Gateway",
+  "uid": "gateway-overview",
+  "version": 1
+}
