@@ -90,7 +90,7 @@ k6 run load-tests/k6/multi-instance.js    # BASE_URL default :8080
 k6 run load-tests/k6/burst.js
 ```
 
-Do not invent numbers. Record k6 output and Prometheus/Grafana while the test runs. See [`docs/benchmarks.md`](docs/benchmarks.md).
+Measured local k6 results (2026-08-19) are in [`docs/results.md`](docs/results.md): about **80 req/s** on one instance vs **152–157 req/s** across two Nginx-balanced instances. Those are laptop Docker Compose numbers, not production capacity. Re-run the scripts below rather than inventing additional figures. See also [`docs/benchmarks.md`](docs/benchmarks.md).
 
 ## Layout
 
