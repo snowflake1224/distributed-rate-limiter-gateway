@@ -152,6 +152,7 @@ services:
       - "8080:8080"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./demo/gateway-demo.html:/usr/share/nginx/html/gateway-demo.html:ro
     depends_on:
       gateway-1:
         condition: service_healthy

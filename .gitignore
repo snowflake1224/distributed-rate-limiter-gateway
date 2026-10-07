@@ -3,9 +3,11 @@ seed-secrets.json
 node_modules/
 dist/
 .env
+.env.production
 *.log
 coverage/
 .DS_Store
 load-tests/results/
 .idea/
 .vscode/
+project-description

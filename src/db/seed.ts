@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { generateApiKey } from "../auth/apiKeys.js";
+import { extractPrefix, generateApiKey, hashApiKey } from "../auth/apiKeys.js";
 import { env } from "../config/env.js";
 import { logger } from "../logging/logger.js";
 import { closePool, pool } from "./pool.js";
@@ -11,9 +11,29 @@ interface SeedSecrets {
   globexKey: string;
 }
 
+function keyFromPlaintext(plaintext: string): { plaintext: string; prefix: string; hash: string } {
+  const prefix = extractPrefix(plaintext);
+  if (!prefix) {
+    throw new Error("DEMO_ACME_KEY and DEMO_GLOBEX_KEY must look like gwk_<prefix>_<secret>");
+  }
+  return { plaintext, prefix, hash: hashApiKey(plaintext) };
+}
+
 async function seed(): Promise<SeedSecrets> {
-  const acme = generateApiKey();
-  const globex = generateApiKey();
+  if (process.env.SEED_FORCE !== "true") {
+    const existing = await pool.query("SELECT 1 FROM tenants LIMIT 1");
+    if ((existing.rowCount ?? 0) > 0) {
+      logger.info("Seed skipped because tenants already exist. Set SEED_FORCE=true to replace demo data.");
+      return {
+        adminApiKey: env.adminApiKey,
+        acmeKey: process.env.DEMO_ACME_KEY ?? "unchanged",
+        globexKey: process.env.DEMO_GLOBEX_KEY ?? "unchanged"
+      };
+    }
+  }
+
+  const acme = process.env.DEMO_ACME_KEY ? keyFromPlaintext(process.env.DEMO_ACME_KEY) : generateApiKey();
+  const globex = process.env.DEMO_GLOBEX_KEY ? keyFromPlaintext(process.env.DEMO_GLOBEX_KEY) : generateApiKey();
 
   await pool.query("DELETE FROM usage_snapshots");
   await pool.query("DELETE FROM audit_logs");

@@ -1,0 +1,66 @@
+# Public edge only. Databases and dashboards are not published to the host.
+# Requires Docker Compose v2.24+ for the !override and !reset tags.
+
+services:
+  postgres:
+    container_name: gateway-postgres
+    ports: !reset []
+    restart: unless-stopped
+
+  redis:
+    ports: !reset []
+    restart: unless-stopped
+
+  migrate:
+    environment:
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      API_KEY_PEPPER: ${API_KEY_PEPPER}
+
+  seed:
+    environment:
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      API_KEY_PEPPER: ${API_KEY_PEPPER}
+      DEMO_ACME_KEY: ${DEMO_ACME_KEY}
+      DEMO_GLOBEX_KEY: ${DEMO_GLOBEX_KEY}
+      SEED_FORCE: ${SEED_FORCE:-false}
+    volumes:
+      - seedout:/output
+
+  gateway-1:
+    ports: !reset []
+    restart: unless-stopped
+    environment:
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      API_KEY_PEPPER: ${API_KEY_PEPPER}
+
+  gateway-2:
+    ports: !reset []
+    restart: unless-stopped
+    environment:
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      API_KEY_PEPPER: ${API_KEY_PEPPER}
+
+  nginx:
+    container_name: gateway-edge
+    ports: !reset []
+    restart: unless-stopped
+    networks:
+      default: {}
+      edge:
+        aliases: [gateway-edge]
+
+  prometheus:
+    profiles: ["observe"]
+    ports: !reset []
+
+  grafana:
+    profiles: ["observe"]
+    ports: !reset []
+
+networks:
+  edge:
+    external: true
+    name: portfolio-edge
+
+volumes:
+  seedout:
