@@ -2,6 +2,7 @@
 
 | Doc | Contents |
 | --- | --- |
+| [demo.md](demo.md) | Gateway Lab: panels, expected-vs-observed math, sandbox API, limits |
 | [architecture.md](architecture.md) | Diagram, request flow, Redis keys, Lua, cache trade-off, concurrency |
 | [schema.md](schema.md) | PostgreSQL tables, indexes, pooling |
 | [failure-modes.md](failure-modes.md) | Fail-closed/open, timeouts, drills |

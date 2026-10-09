@@ -7,6 +7,8 @@ import { countActiveTenants } from "./db/repositories/tenants.js";
 import { logger } from "./logging/logger.js";
 import { activePolicies, activeTenants, startEventLoopLagSampler, stopEventLoopLagSampler } from "./metrics/registry.js";
 import { closeRedis, connectRedis } from "./redis/client.js";
+import { pruneIdleSandboxState } from "./demo/localState.js";
+import { sweepExpiredSandboxes } from "./demo/sandboxes.js";
 
 const app = createApp();
 const server = createServer(app);
@@ -20,6 +22,18 @@ async function refreshCatalogGauges(): Promise<void> {
   }
 }
 
+async function sweepDemoSandboxes(): Promise<void> {
+  try {
+    const removed = await sweepExpiredSandboxes();
+    const pruned = pruneIdleSandboxState(env.demoSandboxTtlMs);
+    if (removed > 0 || pruned > 0) {
+      logger.info({ removed, pruned }, "Swept expired lab sandboxes");
+    }
+  } catch (error) {
+    logger.warn({ err: error }, "Lab sandbox sweep failed");
+  }
+}
+
 async function start(): Promise<void> {
   await connectRedis();
   startEventLoopLagSampler();
@@ -27,6 +41,12 @@ async function start(): Promise<void> {
   setInterval(() => {
     void refreshCatalogGauges();
   }, 15_000).unref();
+
+  if (env.demoSandboxEnabled) {
+    setInterval(() => {
+      void sweepDemoSandboxes();
+    }, env.demoSweepIntervalMs).unref();
+  }
 
   server.listen(env.port, () => {
     logger.info({ port: env.port, instance: env.instanceId }, "Gateway listening");

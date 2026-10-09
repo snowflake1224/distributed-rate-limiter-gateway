@@ -22,6 +22,13 @@ function integer(name: string, fallback: number): number {
   return parsed;
 }
 
+function list(name: string): string[] {
+  return (process.env[name] ?? "")
+    .split(",")
+    .map((entry) => entry.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: integer("PORT", 3000),
@@ -49,7 +56,16 @@ export const env = {
     | "fail_open",
   defaultUpstreamTimeoutMs: integer("DEFAULT_UPSTREAM_TIMEOUT_MS", 3_000),
   shutdownDrainMs: integer("SHUTDOWN_DRAIN_MS", 10_000),
-  logLevel: process.env.LOG_LEVEL ?? "info"
+  logLevel: process.env.LOG_LEVEL ?? "info",
+  demoSandboxEnabled: process.env.DEMO_SANDBOX_ENABLED === "true",
+  demoSandboxTtlMs: integer("DEMO_SANDBOX_TTL_MS", 30 * 60_000),
+  demoSandboxMax: integer("DEMO_SANDBOX_MAX", 50),
+  demoSandboxMaxPerIp: integer("DEMO_SANDBOX_MAX_PER_IP", 3),
+  demoSweepIntervalMs: integer("DEMO_SWEEP_INTERVAL_MS", 60_000),
+  demoLabUpstreamUrl: (process.env.DEMO_LAB_UPSTREAM_URL ?? "http://upstream-lab:4000").replace(/\/+$/, ""),
+  demoPeerUrls: list("DEMO_PEER_URLS"),
+  demoPublicAcmeKey: process.env.DEMO_PUBLIC_ACME_KEY ?? "",
+  demoPublicGlobexKey: process.env.DEMO_PUBLIC_GLOBEX_KEY ?? ""
 };
 
 export function isProduction(): boolean {

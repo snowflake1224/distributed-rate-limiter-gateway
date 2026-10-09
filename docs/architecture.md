@@ -35,7 +35,7 @@ flowchart LR
 
 ## Request flow
 
-1. Nginx adds `X-Request-ID` / `X-Forwarded-For` and picks an instance (`least_conn`).
+1. Nginx resolves the client IP (trusting `X-Forwarded-For` only from private ranges), sets `X-Request-ID` / `X-Forwarded-For`, and picks an instance (`least_conn`). It does not route `/admin/*` or `/metrics`.
 2. The instance assigns a correlation ID (pino request log + `X-Request-ID`).
 3. `/admin/v1/*` uses `X-Admin-Key` (constant-time compare). Everyone else is a gateway request.
 4. Gateway extracts `X-API-Key` or `Authorization: Bearer`. The tenant is **only** taken from the authenticated key row. A body/header `tenant_id` is ignored for authorization.
@@ -45,7 +45,9 @@ flowchart LR
 8. One Lua script mutates Redis and returns `allowed`, `remaining`, `retry_after_ms`, `reset`.
 9. On allow: circuit breaker `canPass()`; if open → `503`. Else reverse-proxy with route/upstream timeout.
 10. Upstream 5xx, timeout, or connect failure records a breaker failure. Success records a success (half-open → closed).
-11. Response headers: `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`, and `Retry-After` on 429/503.
+11. Response headers: `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`, and `Retry-After` on 429/503. Every response also carries `X-Gateway-Instance`, and limited routes add `X-RateLimit-Policy-Version`.
+
+The interactive lab (`/demo/`) uses this same path. Sandbox tenants are ordinary tenants with short-lived rows; see [demo.md](demo.md).
 
 Admin traffic never goes through the rate-limit Lua path.
 

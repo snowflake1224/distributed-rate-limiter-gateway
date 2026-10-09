@@ -8,12 +8,20 @@ export interface BreakerOptions {
   halfOpenMaxProbes: number;
 }
 
+export interface BreakerSnapshot {
+  state: CircuitState;
+  consecutiveFailures: number;
+  failureThreshold: number;
+  recoveryMs: number;
+  retryInMs: number;
+}
+
 export class CircuitBreaker {
   state: CircuitState = "closed";
   private consecutiveFailures = 0;
   private openedAt = 0;
   private halfOpenProbes = 0;
-  private readonly options: BreakerOptions;
+  private options: BreakerOptions;
 
   constructor(options: BreakerOptions) {
     this.options = options;
@@ -61,6 +69,29 @@ export class CircuitBreaker {
     return this.state;
   }
 
+  reconfigure(options: BreakerOptions): void {
+    this.options = options;
+  }
+
+  sameOptions(options: BreakerOptions): boolean {
+    return (
+      this.options.failureThreshold === options.failureThreshold &&
+      this.options.recoveryMs === options.recoveryMs &&
+      this.options.halfOpenMaxProbes === options.halfOpenMaxProbes
+    );
+  }
+
+  snapshot(): BreakerSnapshot {
+    const state = this.getState();
+    return {
+      state,
+      consecutiveFailures: this.consecutiveFailures,
+      failureThreshold: this.options.failureThreshold,
+      recoveryMs: this.options.recoveryMs,
+      retryInMs: state === "open" ? Math.max(0, this.options.recoveryMs - (Date.now() - this.openedAt)) : 0
+    };
+  }
+
   private tryProbe(): boolean {
     if (this.halfOpenProbes >= this.options.halfOpenMaxProbes) {
       return false;
@@ -98,6 +129,9 @@ const breakers = new Map<string, CircuitBreaker>();
 export function getBreaker(options: BreakerOptions): CircuitBreaker {
   const existing = breakers.get(options.name);
   if (existing) {
+    if (!existing.sameOptions(options)) {
+      existing.reconfigure(options);
+    }
     return existing;
   }
   const created = new CircuitBreaker(options);
@@ -107,6 +141,26 @@ export function getBreaker(options: BreakerOptions): CircuitBreaker {
 
 export function resetBreakers(): void {
   breakers.clear();
+}
+
+export function peekBreaker(name: string): BreakerSnapshot | null {
+  return breakers.get(name)?.snapshot() ?? null;
+}
+
+const STATES: CircuitState[] = ["closed", "open", "half_open"];
+
+export function removeBreaker(name: string): void {
+  if (!breakers.delete(name)) {
+    return;
+  }
+  circuitBreakerState.remove({ upstream: name });
+  for (const from of STATES) {
+    for (const to of STATES) {
+      if (from !== to) {
+        circuitBreakerTransitionsTotal.remove({ upstream: name, from, to });
+      }
+    }
+  }
 }
 
 export function listBreakerStates(): Array<{ name: string; state: CircuitState }> {

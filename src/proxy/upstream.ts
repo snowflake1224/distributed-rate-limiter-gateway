@@ -43,6 +43,13 @@ function headerValue(value: string | string[] | undefined): string | string[] | 
   return value;
 }
 
+export function buildUpstreamUrl(baseUrl: string, targetPath: string, query: string): URL {
+  const base = new URL(baseUrl);
+  const basePath = base.pathname.replace(/\/+$/, "");
+  const path = targetPath.startsWith("/") ? targetPath : `/${targetPath}`;
+  return new URL(basePath + path + (query || ""), base);
+}
+
 export async function proxyUpstream(input: {
   resolved: ResolvedRoute;
   method: string;
@@ -67,8 +74,11 @@ export async function proxyUpstream(input: {
     throw serviceUnavailable("Upstream circuit open", Math.ceil(resolved.upstream.cbRecoveryMs / 1000));
   }
 
-  const targetPath = stripPathPrefix(input.path, resolved.route.stripPrefix);
-  const url = new URL(targetPath + (input.query || ""), resolved.upstream.baseUrl);
+  const url = buildUpstreamUrl(
+    resolved.upstream.baseUrl,
+    stripPathPrefix(input.path, resolved.route.stripPrefix),
+    input.query
+  );
   const headers = filterHeaders(input.headers);
   headers["x-request-id"] = input.requestId;
   headers["x-tenant-id"] = resolved.route.tenantId;

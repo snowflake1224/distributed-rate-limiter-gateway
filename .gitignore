@@ -2,6 +2,7 @@ seed-secrets.json
 .local/
 node_modules/
 dist/
+frontend/dist/
 .env
 .env.production
 *.log

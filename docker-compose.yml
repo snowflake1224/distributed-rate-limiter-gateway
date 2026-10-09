@@ -49,6 +49,8 @@ services:
       UPSTREAM_HEALTHY_URL: http://upstream-ok:4000
       UPSTREAM_FLAKY_URL: http://upstream-flaky:4000
       SEED_OUTPUT_PATH: /output/seed-secrets.json
+      DEMO_ACME_KEY: gwk_acmelocal_local_demo_key_not_secret
+      DEMO_GLOBEX_KEY: gwk_globexlocal_local_demo_key_not_secret
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -78,6 +80,13 @@ services:
       UPSTREAM_MODE: slow
       UPSTREAM_DELAY_MS: "2500"
 
+  upstream-lab:
+    build: .
+    command: ["node", "dist/upstream/server.js"]
+    environment:
+      PORT: 4000
+      UPSTREAM_MODE: lab
+
   gateway-1:
     build: .
     ports:
@@ -93,6 +102,11 @@ services:
       API_KEY_CACHE_TTL_MS: 5000
       REDIS_COMMAND_TIMEOUT_MS: 200
       LOG_LEVEL: info
+      DEMO_SANDBOX_ENABLED: "true"
+      DEMO_LAB_UPSTREAM_URL: http://upstream-lab:4000
+      DEMO_PEER_URLS: http://gateway-1:3000,http://gateway-2:3000
+      DEMO_PUBLIC_ACME_KEY: gwk_acmelocal_local_demo_key_not_secret
+      DEMO_PUBLIC_GLOBEX_KEY: gwk_globexlocal_local_demo_key_not_secret
     depends_on:
       redis:
         condition: service_healthy
@@ -101,6 +115,8 @@ services:
       upstream-ok:
         condition: service_started
       upstream-flaky:
+        condition: service_started
+      upstream-lab:
         condition: service_started
     healthcheck:
       test:
@@ -129,11 +145,18 @@ services:
       API_KEY_CACHE_TTL_MS: 5000
       REDIS_COMMAND_TIMEOUT_MS: 200
       LOG_LEVEL: info
+      DEMO_SANDBOX_ENABLED: "true"
+      DEMO_LAB_UPSTREAM_URL: http://upstream-lab:4000
+      DEMO_PEER_URLS: http://gateway-1:3000,http://gateway-2:3000
+      DEMO_PUBLIC_ACME_KEY: gwk_acmelocal_local_demo_key_not_secret
+      DEMO_PUBLIC_GLOBEX_KEY: gwk_globexlocal_local_demo_key_not_secret
     depends_on:
       redis:
         condition: service_healthy
       seed:
         condition: service_completed_successfully
+      upstream-lab:
+        condition: service_started
     healthcheck:
       test:
         [
@@ -147,12 +170,11 @@ services:
       retries: 10
 
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
       - "8080:8080"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./demo/gateway-demo.html:/usr/share/nginx/html/gateway-demo.html:ro
     depends_on:
       gateway-1:
         condition: service_healthy

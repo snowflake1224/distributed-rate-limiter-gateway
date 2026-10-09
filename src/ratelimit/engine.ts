@@ -90,13 +90,18 @@ export async function evaluateRateLimit(policy: Policy, key: string): Promise<Ra
   }
 }
 
+export function metricTenantLabel(tenantSlug: string): string {
+  return tenantSlug.startsWith("sbx-") ? "sandbox" : tenantSlug;
+}
+
 export function assertAllowed(decision: RateLimitDecision, tenantSlug: string): void {
+  const tenant = metricTenantLabel(tenantSlug);
   if (decision.allowed) {
-    rateLimitAllowedTotal.inc({ tenant: tenantSlug, algorithm: decision.algorithm });
+    rateLimitAllowedTotal.inc({ tenant, algorithm: decision.algorithm });
     return;
   }
   rateLimitRejectedTotal.inc({
-    tenant: tenantSlug,
+    tenant,
     algorithm: decision.algorithm,
     reason: "quota"
   });

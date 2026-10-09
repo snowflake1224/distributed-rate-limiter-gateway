@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { requireClientKey } from "../auth/middleware.js";
 import { resolveRouteConfig } from "../cache/configCache.js";
-import { notFound, serviceUnavailable } from "../errors.js";
+import { HttpError, notFound, serviceUnavailable } from "../errors.js";
+import { recordSandboxOutcome, type Outcome } from "../demo/localState.js";
 import { logger } from "../logging/logger.js";
 import { assertAllowed, evaluateRateLimit } from "../ratelimit/engine.js";
 import { buildRateLimitKey } from "../policy/dimensions.js";
@@ -41,7 +42,24 @@ async function readBody(req: Request): Promise<Buffer> {
   return Buffer.alloc(0);
 }
 
+function outcomeForError(error: unknown): Outcome {
+  if (error instanceof HttpError) {
+    if (error.code === "rate_limited") {
+      return "rate_limited";
+    }
+    if (error.code === "service_unavailable" && /circuit open/i.test(error.message)) {
+      return "circuit_open";
+    }
+    if (error.code === "bad_gateway" || error.code === "gateway_timeout") {
+      return "upstream_error";
+    }
+  }
+  return "gateway_error";
+}
+
 export async function handleGateway(req: Request, res: Response, next: NextFunction): Promise<void> {
+  let sandboxTenant: string | null = null;
+  let sandboxUpstream: string | undefined;
   try {
     await new Promise<void>((resolve, reject) => {
       requireClientKey(req, res, (err) => (err ? reject(err) : resolve()));
@@ -63,6 +81,10 @@ export async function handleGateway(req: Request, res: Response, next: NextFunct
     if (!resolved) {
       throw notFound("No matching route for this tenant");
     }
+    if (auth.tenantSlug.startsWith("sbx-")) {
+      sandboxTenant = auth.tenantId;
+      sandboxUpstream = resolved.upstream.id;
+    }
 
     const key = buildRateLimitKey({
       auth,
@@ -73,6 +95,7 @@ export async function handleGateway(req: Request, res: Response, next: NextFunct
     });
 
     const decision = await evaluateRateLimit(resolved.policy, key);
+    res.setHeader("x-ratelimit-policy-version", String(resolved.policy.version));
     applyRateLimitHeaders(res, decision);
     assertAllowed(decision, auth.tenantSlug);
 
@@ -91,8 +114,14 @@ export async function handleGateway(req: Request, res: Response, next: NextFunct
       res.setHeader(header, value);
     }
     applyRateLimitHeaders(res, decision);
+    if (sandboxTenant) {
+      recordSandboxOutcome(sandboxTenant, proxied.statusCode >= 500 ? "upstream_error" : "allowed", sandboxUpstream);
+    }
     res.status(proxied.statusCode).send(proxied.body);
   } catch (error) {
+    if (sandboxTenant) {
+      recordSandboxOutcome(sandboxTenant, outcomeForError(error), sandboxUpstream);
+    }
     next(error);
   }
 }

@@ -50,6 +50,17 @@ export class TtlLruCache<T> {
     return removed;
   }
 
+  peekByPrefix(prefix: string): Array<{ value: T; expiresInMs: number }> {
+    const now = Date.now();
+    const out: Array<{ value: T; expiresInMs: number }> = [];
+    for (const [key, entry] of this.store) {
+      if (key.startsWith(prefix) && entry.expiresAt > now) {
+        out.push({ value: entry.value, expiresInMs: entry.expiresAt - now });
+      }
+    }
+    return out;
+  }
+
   clear(): void {
     this.store.clear();
   }

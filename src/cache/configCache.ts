@@ -108,6 +108,13 @@ export function invalidateTenantConfig(tenantId: string): void {
   policyCache.deleteByPrefix(`route:${tenantId}:`);
 }
 
+export function cachedPolicyVersions(tenantId: string): Array<{ policyVersion: number; expiresInMs: number }> {
+  return policyCache
+    .peekByPrefix(`route:${tenantId}:`)
+    .filter((entry) => entry.value !== null)
+    .map((entry) => ({ policyVersion: entry.value!.policy.version, expiresInMs: entry.expiresInMs }));
+}
+
 export function invalidateAllApiKeys(): void {
   apiKeyCache.clear();
 }

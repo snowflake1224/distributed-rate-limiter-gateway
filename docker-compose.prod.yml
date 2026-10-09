@@ -32,6 +32,9 @@ services:
     environment:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       API_KEY_PEPPER: ${API_KEY_PEPPER}
+      DEMO_SANDBOX_ENABLED: ${DEMO_SANDBOX_ENABLED:-true}
+      DEMO_PUBLIC_ACME_KEY: ${DEMO_ACME_KEY}
+      DEMO_PUBLIC_GLOBEX_KEY: ${DEMO_GLOBEX_KEY}
 
   gateway-2:
     ports: !reset []
@@ -39,6 +42,12 @@ services:
     environment:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       API_KEY_PEPPER: ${API_KEY_PEPPER}
+      DEMO_SANDBOX_ENABLED: ${DEMO_SANDBOX_ENABLED:-true}
+      DEMO_PUBLIC_ACME_KEY: ${DEMO_ACME_KEY}
+      DEMO_PUBLIC_GLOBEX_KEY: ${DEMO_GLOBEX_KEY}
+
+  upstream-lab:
+    restart: unless-stopped
 
   nginx:
     container_name: gateway-edge

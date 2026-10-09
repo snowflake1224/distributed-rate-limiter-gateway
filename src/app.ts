@@ -1,6 +1,8 @@
 import express from "express";
 import { adminRouter } from "./api/admin.js";
+import { demoRouter } from "./api/demo.js";
 import { errorHandler } from "./api/errorHandler.js";
+import { env } from "./config/env.js";
 import { handleGateway } from "./api/gateway.js";
 import { healthRouter } from "./health/endpoints.js";
 import { httpLogger } from "./logging/logger.js";
@@ -15,6 +17,7 @@ export function createApp(): express.Express {
 
   app.use((req, res, next) => {
     req.requestStartedAt = process.hrtime.bigint();
+    res.setHeader("x-gateway-instance", env.instanceId);
     const incoming = req.header("x-request-id");
     if (incoming) {
       res.setHeader("x-request-id", incoming);
@@ -24,7 +27,9 @@ export function createApp(): express.Express {
     res.on("finish", () => {
       const group = req.path.startsWith("/admin")
         ? "admin"
-        : req.path.startsWith("/health")
+        : req.path.startsWith("/demo/v1")
+          ? "demo"
+          : req.path.startsWith("/health")
           ? "health"
           : req.path === "/metrics"
             ? "metrics"
@@ -54,6 +59,7 @@ export function createApp(): express.Express {
     }
   });
   app.use("/admin/v1", adminRouter);
+  app.use("/demo/v1", demoRouter);
   app.use(handleGateway);
   app.use(errorHandler);
   return app;
