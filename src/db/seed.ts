@@ -63,7 +63,7 @@ async function seed(): Promise<SeedSecrets> {
       burst_capacity, dimensions, fail_mode
     ) VALUES (
       $1, 'orders-token-bucket', 'token_bucket', 20, 1000, 10, 20,
-      ARRAY['tenant','api_key','route']::text[], 'fail_closed'
+      ARRAY['tenant']::text[], 'fail_closed'
     ) RETURNING id`,
     [acmeId]
   );
@@ -73,17 +73,7 @@ async function seed(): Promise<SeedSecrets> {
       burst_capacity, dimensions, custom_header, fail_mode
     ) VALUES (
       $1, 'search-sliding-window', 'sliding_window', 5, 10000, 1, 5,
-      ARRAY['tenant','route','custom']::text[], 'x-user-id', 'fail_closed'
-    ) RETURNING id`,
-    [acmeId]
-  );
-  const acmeIp = await pool.query(
-    `INSERT INTO policies (
-      tenant_id, name, algorithm, limit_count, window_ms, refill_rate_per_sec,
-      burst_capacity, dimensions, fail_mode
-    ) VALUES (
-      $1, 'ip-burst', 'token_bucket', 30, 1000, 5, 15,
-      ARRAY['tenant','ip','route']::text[], 'fail_closed'
+      ARRAY['tenant','custom']::text[], 'x-user-id', 'fail_closed'
     ) RETURNING id`,
     [acmeId]
   );
@@ -93,7 +83,7 @@ async function seed(): Promise<SeedSecrets> {
       burst_capacity, dimensions, fail_mode
     ) VALUES (
       $1, 'catalog-window', 'sliding_window', 20, 5000, 4, 20,
-      ARRAY['tenant','api_key','route']::text[], 'fail_closed'
+      ARRAY['tenant']::text[], 'fail_closed'
     ) RETURNING id`,
     [globexId]
   );
@@ -103,7 +93,7 @@ async function seed(): Promise<SeedSecrets> {
       burst_capacity, dimensions, fail_mode
     ) VALUES (
       $1, 'fail-open-demo', 'token_bucket', 100, 1000, 50, 100,
-      ARRAY['tenant','route']::text[], 'fail_open'
+      ARRAY['tenant']::text[], 'fail_open'
     ) RETURNING id`,
     [acmeId]
   );
@@ -133,15 +123,13 @@ async function seed(): Promise<SeedSecrets> {
       ($1, 'orders', '/api/orders', '*', $2, $3, NULL),
       ($1, 'order-by-id', '/api/orders/:id', 'GET', $2, $3, NULL),
       ($1, 'search', '/api/search', 'GET', $4, $3, NULL),
-      ($1, 'ip-limited', '/api/ip-demo', '*', $5, $3, NULL),
-      ($1, 'flaky', '/api/flaky', '*', $6, $7, NULL),
-      ($8, 'catalog', '/api/catalog', '*', $9, $10, NULL)`,
+      ($1, 'flaky', '/api/flaky', '*', $5, $6, NULL),
+      ($7, 'catalog', '/api/catalog', '*', $8, $9, NULL)`,
     [
       acmeId,
       acmeTb.rows[0].id,
       healthy.rows[0].id,
       acmeSw.rows[0].id,
-      acmeIp.rows[0].id,
       failOpenPolicy.rows[0].id,
       flaky.rows[0].id,
       globexId,

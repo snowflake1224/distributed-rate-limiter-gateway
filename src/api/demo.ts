@@ -98,11 +98,10 @@ demoRouter.get("/manifest", (_req, res) => {
       acmeKey: env.demoPublicAcmeKey || null,
       globexKey: env.demoPublicGlobexKey || null,
       routes: [
-        { path: "/api/orders", tenant: "acme", algorithm: "token_bucket", summary: "burst 20, refill 10/s, per API key" },
-        { path: "/api/search", tenant: "acme", algorithm: "sliding_window", summary: "5 per 10s, per X-User-Id" },
-        { path: "/api/ip-demo", tenant: "acme", algorithm: "token_bucket", summary: "burst 15, refill 5/s, per client IP" },
+        { path: "/api/orders", tenant: "acme", algorithm: "token_bucket", summary: "burst 20, refill 10/s, per tenant" },
+        { path: "/api/search", tenant: "acme", algorithm: "sliding_window", summary: "5 per 10s, per tenant + X-User-Id" },
         { path: "/api/flaky", tenant: "acme", algorithm: "token_bucket", summary: "fail-open policy, 75% failing upstream" },
-        { path: "/api/catalog", tenant: "globex", algorithm: "sliding_window", summary: "20 per 5s, per API key" }
+        { path: "/api/catalog", tenant: "globex", algorithm: "sliding_window", summary: "20 per 5s, per tenant" }
       ]
     }
   });

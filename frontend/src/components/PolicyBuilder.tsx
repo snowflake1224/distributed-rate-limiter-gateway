@@ -1,9 +1,10 @@
 import { DIMENSION_HELP } from "../lib/defaults";
 import { bound } from "../lib/validation";
 import type { Bound, Dimension, PolicyConfig } from "../lib/types";
-import { NumberField, Segmented, TextField } from "./fields";
+import { NumberField, Segmented } from "./fields";
 
-const DIMENSIONS: Dimension[] = ["tenant", "api_key", "route", "ip", "custom"];
+const DIMENSIONS: Dimension[] = ["tenant", "custom"];
+const DIMENSION_LABEL: Partial<Record<Dimension, string>> = { custom: "x-user-id" };
 
 export function PolicyBuilder(props: {
   draft: PolicyConfig;
@@ -92,25 +93,15 @@ export function PolicyBuilder(props: {
                 checked={draft.dimensions.includes(dimension)}
                 onChange={() => toggleDimension(dimension)}
               />
-              <span className="mono">{dimension}</span>
+              <span className="mono">{DIMENSION_LABEL[dimension] ?? dimension}</span>
             </label>
           ))}
         </div>
         <small className="hint">
-          The selected values are hashed into the Redis key. More dimensions means narrower, separate quotas.
+          The selected values are hashed into the Redis key. Adding x-user-id gives each user a separate quota;
+          requests without the header share the value 'anonymous'.
         </small>
       </fieldset>
-
-      {draft.dimensions.includes("custom") ? (
-        <TextField
-          label="Custom dimension header"
-          value={draft.customHeader}
-          onChange={(v) => set("customHeader", v.toLowerCase())}
-          mono
-          hint="Requests without this header share the value 'anonymous'."
-          disabled={props.disabled}
-        />
-      ) : null}
 
       <Segmented
         label="If Redis is unreachable"

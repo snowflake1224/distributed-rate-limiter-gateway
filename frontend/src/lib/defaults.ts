@@ -6,7 +6,7 @@ export const DEFAULT_POLICY: PolicyConfig = {
   refillRatePerSec: 1,
   limitCount: 10,
   windowMs: 10_000,
-  dimensions: ["tenant", "api_key", "route"],
+  dimensions: ["tenant"],
   customHeader: "x-user-id",
   failMode: "fail_closed"
 };
@@ -48,8 +48,5 @@ export const UPSTREAM_PRESETS: Array<{ id: string; label: string; description: s
 
 export const DIMENSION_HELP: Record<string, string> = {
   tenant: "One shared quota for the whole tenant.",
-  api_key: "Separate quota per API key.",
-  route: "Separate quota per route.",
-  ip: "Separate quota per client IP (from X-Forwarded-For set by Nginx).",
-  custom: "Separate quota per value of a header you choose, e.g. X-User-Id."
+  custom: "Separate quota per value of the X-User-Id header."
 };

@@ -63,7 +63,7 @@ export interface Experiment {
   execute(ctx: LabContext, p: Params, report: Reporter, env: ExperimentEnv): Promise<ExperimentOutcome>;
 }
 
-const BASE_POLICY: Partial<PolicyConfig> = { dimensions: ["tenant", "api_key", "route"], failMode: "fail_closed" };
+const BASE_POLICY: Partial<PolicyConfig> = { dimensions: ["tenant"], failMode: "fail_closed" };
 const HEALTHY: Partial<UpstreamConfig> = { delayMs: 0, failRatePct: 0, failFirstN: 0 };
 
 export function sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -401,9 +401,9 @@ const dimensions: Experiment = {
   hypothesis: (p) =>
     `With the custom dimension on X-User-Id, each of ${p.users} users gets its own bucket of ${p.capacity}, so about ${p.users * p.capacity} requests pass in total. Without it, all users share one bucket and only about ${p.capacity} pass.`,
   steps: (p) => [
-    `Policy: capacity ${p.capacity}, dimensions tenant + api_key + route + custom (x-user-id)`,
+    `Policy: capacity ${p.capacity}, dimensions tenant + x-user-id`,
     `Send ${p.users * p.capacity * 2} requests rotating x-user-id across user-0…user-${p.users - 1}`,
-    "Policy: same capacity, without the custom dimension",
+    "Policy: same capacity, tenant only",
     "Send the same traffic again"
   ],
   async execute(ctx, p, report, env) {
@@ -414,7 +414,7 @@ const dimensions: Experiment = {
       0,
       async () => {
         const s = await ctx.configure(
-          { algorithm: "token_bucket", burstCapacity: p.capacity, refillRatePerSec: 0.1, dimensions: ["tenant", "api_key", "route", "custom"], customHeader: "x-user-id", failMode: "fail_closed" },
+          { algorithm: "token_bucket", burstCapacity: p.capacity, refillRatePerSec: 0.1, dimensions: ["tenant", "custom"], customHeader: "x-user-id", failMode: "fail_closed" },
           HEALTHY
         );
         await waitForPolicy(ctx, s.sandbox.policy.version, env.policyCacheTtlMs);
