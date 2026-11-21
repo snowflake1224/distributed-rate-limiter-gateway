@@ -1,0 +1,23 @@
+flowchart TD
+  Req["Incoming Request\n(X-API-Key, method, path)"] --> Auth{"API Key Valid?\n(SHA-256 + 5s TtlLruCache)"}
+  Auth -->|No / Revoked / Expired| R401["401 Unauthorized"]
+  Auth -->|Yes| Route{"Route Match?\n(TtlLruCache -> Postgres)"}
+  Route -->|None| R404["404 Not Found"]
+  Route -->|Matched| Key["buildRateLimitKey()\nrl:algo:tenant:policy:vN:sha256(dims)"]
+  Key --> Lua{"Redis Lua EVALSHA\n(200ms commandTimeout)"}
+
+  Lua -->|"Redis Error / Timeout"| FailMode{"policy.failMode"}
+  FailMode -->|"fail_closed (default)"| R503a["503 Service Unavailable"]
+  FailMode -->|"fail_open"| AllowBypass["Allow (remaining = -1)"]
+
+  Lua -->|"allowed == 0"| R429["429 Too Many Requests\nRateLimit-* + Retry-After"]
+  Lua -->|"allowed == 1"| CB
+  AllowBypass --> CB
+
+  CB{"Per-Instance CircuitBreaker\nstate?"}
+  CB -->|"open (&lt; recoveryMs)"| R503b["503 Circuit Open"]
+  CB -->|"half_open (probe slot full)"| R503b
+  CB -->|"closed / probe slot"| Proxy["Proxy Upstream (timeoutMs)"]
+
+  Proxy -->|"2xx-4xx"| RecordOK["recordSuccess()\n-> closed"]
+  Proxy -->|"5xx / Network / Timeout"| RecordFail["recordFailure()\nfailures >= threshold -> open"]

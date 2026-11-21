@@ -1,0 +1,17 @@
+flowchart LR
+  Client["Client / Gateway Lab\n+ X-API-Key\n(+ optional x-user-id)"] --> Nginx["Nginx Edge (:8080)\nleast_conn proxy\n(blocks /admin & /metrics)"]
+  Nginx --> GW1["gateway-1 (:3000)\nStateless Node.js\n+ TtlLruCache (5s)"]
+  Nginx --> GW2["gateway-2 (:3002)\nStateless Node.js\n+ TtlLruCache (5s)"]
+
+  GW1 <-->|"Policy/Route Cache Miss\n& Sandbox Provisioning"| PG[("PostgreSQL 16\nTenants, Keys, Policies,\nRoutes, Upstreams, Sandboxes")]
+  GW2 <-->|"pg_advisory_xact_lock\n(capacity guard)"| PG
+
+  GW1 -->|"Atomic Lua EVALSHA\n(Redis TIME)"| Redis[("Redis 7\nToken Bucket / Sliding Window")]
+  GW2 -->|"Atomic Lua EVALSHA\n(fail_closed -> 503)"| Redis
+
+  GW1 -->|"Per-instance CircuitBreaker\n(closed / open / half_open)"| Upstream["Upstreams\n(upstream-ok / flaky / lab)"]
+  GW2 -->|"Per-instance CircuitBreaker"| Upstream
+
+  Prom["Prometheus (:9090)"] -.->|"scrapes /metrics"| GW1
+  Prom -.->|"scrapes /metrics"| GW2
+  Graf["Grafana (:3001)"] --> Prom
