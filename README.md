@@ -53,4 +53,4 @@ cd frontend && npm install && npm test && npm run build
 | [docs/lua-algorithms.md](docs/lua-algorithms.md) | `token_bucket.lua`, `sliding_window.lua`, Redis `TIME`, dimension hashing |
 | [docs/data-model.md](docs/data-model.md) | PostgreSQL schema, indexes, and sandbox tables |
 | [docs/benchmarks-and-testing.md](docs/benchmarks-and-testing.md) | Unit/integration test breakdown and k6 load test details |
-| [docs/interview-guide.md](docs/interview-guide.md) | Distributed rate-limiting Q&A, failure tradeoffs, and scaling paths |
+| [docs/engineering-faq.md](docs/engineering-faq.md) | Distributed rate-limiting Q&A, failure tradeoffs, and scaling paths |

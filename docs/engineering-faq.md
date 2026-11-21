@@ -1,4 +1,4 @@
-# Interview & System Design Guide
+# Engineering FAQ
 
 ## 1. How do two stateless gateway instances enforce one shared limit without doubling the quota?
 
