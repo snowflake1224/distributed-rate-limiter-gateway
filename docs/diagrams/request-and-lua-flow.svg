@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 560" role="img" aria-labelledby="f-t f-d">
+  <title id="f-t">Gateway Request Decision &amp; Circuit Breaker Lifecycle</title>
+  <desc>Exact hot-path execution flow in handleGateway, evaluateRateLimit, and CircuitBreaker.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0a0f1a; }
+      .panel { fill: #0f172a; stroke: #1e293b; stroke-width: 1.5; rx: 14; }
+      .n { fill: #111927; stroke: #334155; stroke-width: 1.5; rx: 10; }
+      .n-sky { fill: #0f1b2d; stroke: #38bdf8; stroke-width: 1.75; rx: 10; }
+      .n-ok { fill: #0d211b; stroke: #10b981; stroke-width: 1.75; rx: 10; }
+      .n-warn { fill: #221a0c; stroke: #f59e0b; stroke-width: 1.75; rx: 10; }
+      .n-bad { fill: #251018; stroke: #f43f5e; stroke-width: 1.75; rx: 10; }
+      .h1 { font: 700 17px 'Inter', system-ui, sans-serif; fill: #f8fafc; }
+      .sub { font: 500 12px 'Inter', system-ui, sans-serif; fill: #94a3b8; }
+      .t { font: 700 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #f8fafc; }
+      .b { font: 500 11px 'Inter', system-ui, sans-serif; fill: #cbd5e1; }
+      .arr { stroke: #64748b; stroke-width: 1.75; fill: none; marker-end: url(#m1); }
+      .arr-ok { stroke: #10b981; stroke-width: 1.75; fill: none; marker-end: url(#m-ok1); }
+      .arr-bad { stroke: #f43f5e; stroke-width: 1.75; fill: none; marker-end: url(#m-bad1); }
+      .lbl { font: 600 10.5px 'Inter', system-ui, sans-serif; fill: #94a3b8; }
+    </style>
+    <marker id="m1" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#64748b"/></marker>
+    <marker id="m-ok1" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#10b981"/></marker>
+    <marker id="m-bad1" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 1 L10 5 L0 9 z" fill="#f43f5e"/></marker>
+  </defs>
+
+  <rect width="1120" height="560" class="bg"/>
+  <text x="32" y="38" class="h1">Gateway Request Hot Path &amp; Circuit Breaker State Machine</text>
+  <text x="32" y="58" class="sub">handleGateway (src/api/gateway.ts) · evaluateRateLimit (src/ratelimit/engine.ts) · CircuitBreaker (src/circuitbreaker/breaker.ts)</text>
+
+  <!-- Hot path -->
+  <rect x="32" y="80" width="1056" height="260" class="panel"/>
+  <text x="52" y="106" class="b" style="font-weight:700;fill:#e2e8f0">1. Request Hot Path</text>
+
+  <rect x="52" y="128" width="165" height="72" class="n"/>
+  <text x="68" y="152" class="t">1. API Key Auth</text>
+  <text x="68" y="170" class="b">SHA-256 + 5s LRU</text>
+  <text x="68" y="186" class="lbl">Miss -&gt; Postgres</text>
+
+  <rect x="257" y="128" width="185" height="72" class="n"/>
+  <text x="273" y="152" class="t">2. Policy &amp; Route</text>
+  <text x="273" y="170" class="b">resolveRouteConfig</text>
+  <text x="273" y="186" class="lbl">buildRateLimitKey(dims)</text>
+
+  <rect x="482" y="128" width="210" height="72" class="n-sky"/>
+  <text x="498" y="152" class="t">3. Redis Lua Decision</text>
+  <text x="498" y="170" class="b">tokenBucket / slidingWindow</text>
+  <text x="498" y="186" class="lbl">Redis TIME · 200ms timeout</text>
+
+  <rect x="732" y="128" width="165" height="72" class="n-warn"/>
+  <text x="748" y="152" class="t">4. Circuit Breaker</text>
+  <text x="748" y="170" class="b">canPass() check</text>
+  <text x="748" y="186" class="lbl">Per-upstream instance</text>
+
+  <rect x="937" y="128" width="130" height="72" class="n-ok"/>
+  <text x="953" y="152" class="t">5. Upstream</text>
+  <text x="953" y="170" class="b">HTTP proxy</text>
+  <text x="953" y="186" class="lbl">RateLimit-* hdrs</text>
+
+  <rect x="52" y="252" width="165" height="58" class="n-bad"/>
+  <text x="74" y="276" class="t">401 Unauthorized</text>
+  <text x="74" y="294" class="b">Invalid/revoked key</text>
+
+  <rect x="257" y="252" width="185" height="58" class="n-bad"/>
+  <text x="285" y="276" class="t">404 / 503 PG Err</text>
+  <text x="285" y="294" class="b">No route / DB down</text>
+
+  <rect x="482" y="252" width="210" height="58" class="n-bad"/>
+  <text x="500" y="276" class="t">429 Quota | 503 Down</text>
+  <text x="500" y="294" class="b">Retry-After | fail_closed</text>
+
+  <rect x="732" y="252" width="165" height="58" class="n-bad"/>
+  <text x="752" y="276" class="t">503 Circuit Open</text>
+  <text x="752" y="294" class="b">Fail-fast w/o upstream</text>
+
+  <path d="M 217 164 L 254 164" class="arr-ok"/>
+  <path d="M 442 164 L 479 164" class="arr-ok"/>
+  <path d="M 692 164 L 729 164" class="arr-ok"/>
+  <path d="M 897 164 L 934 164" class="arr-ok"/>
+
+  <path d="M 134 200 L 134 249" class="arr-bad"/>
+  <path d="M 349 200 L 349 249" class="arr-bad"/>
+  <path d="M 587 200 L 587 249" class="arr-bad"/>
+  <path d="M 814 200 L 814 249" class="arr-bad"/>
+
+  <!-- Circuit Breaker FSM -->
+  <rect x="32" y="362" width="1056" height="168" class="panel"/>
+  <text x="52" y="388" class="b" style="font-weight:700;fill:#e2e8f0">2. Per-Instance CircuitBreaker State Machine</text>
+
+  <rect x="62" y="424" width="245" height="72" class="n-ok"/>
+  <text x="82" y="450" class="t">closed (metric = 0)</text>
+  <text x="82" y="470" class="b">All requests pass; failure count resets</text>
+  <text x="82" y="486" class="b">on 2xx/4xx response.</text>
+
+  <rect x="435" y="424" width="245" height="72" class="n-bad"/>
+  <text x="455" y="450" class="t">open (metric = 2)</text>
+  <text x="455" y="470" class="b">Fails fast with 503 until</text>
+  <text x="455" y="486" class="b">Date.now() - openedAt &gt;= recoveryMs.</text>
+
+  <rect x="808" y="424" width="250" height="72" class="n-warn"/>
+  <text x="828" y="450" class="t">half_open (metric = 1)</text>
+  <text x="828" y="470" class="b">Allows up to halfOpenMaxProbes;</text>
+  <text x="828" y="486" class="b">success -&gt; closed | failure -&gt; re-open.</text>
+
+  <path d="M 307 450 L 432 450" class="arr-bad"/>
+  <text x="315" y="442" class="lbl">failures &gt;= threshold</text>
+
+  <path d="M 680 450 L 805 450" class="arr"/>
+  <text x="695" y="442" class="lbl">recoveryMs elapsed</text>
+
+  <path d="M 808 480 L 683 480" class="arr-bad"/>
+  <text x="695" y="497" class="lbl">probe failed -&gt; trip()</text>
+
+  <path d="M 933 424 L 933 398 L 184 398 L 184 421" class="arr-ok"/>
+  <text x="470" y="392" class="lbl" style="fill:#10b981">probe succeeded -&gt; recordSuccess()</text>
+</svg>
