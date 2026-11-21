@@ -26,7 +26,7 @@
 
   <rect width="1120" height="560" class="bg"/>
   <text x="32" y="38" class="h1">Gateway Request Hot Path &amp; Circuit Breaker State Machine</text>
-  <text x="32" y="58" class="sub">handleGateway (src/api/gateway.ts) · evaluateRateLimit (src/ratelimit/engine.ts) · CircuitBreaker (src/circuitbreaker/breaker.ts)</text>
+  <text x="32" y="58" class="sub">handleGateway (src/api/gateway.ts) &#183; evaluateRateLimit (src/ratelimit/engine.ts) &#183; CircuitBreaker (src/circuitbreaker/breaker.ts)</text>
 
   <!-- Hot path -->
   <rect x="32" y="80" width="1056" height="260" class="panel"/>
@@ -45,7 +45,7 @@
   <rect x="482" y="128" width="210" height="72" class="n-sky"/>
   <text x="498" y="152" class="t">3. Redis Lua Decision</text>
   <text x="498" y="170" class="b">tokenBucket / slidingWindow</text>
-  <text x="498" y="186" class="lbl">Redis TIME · 200ms timeout</text>
+  <text x="498" y="186" class="lbl">Redis TIME &#183; 200ms timeout</text>
 
   <rect x="732" y="128" width="165" height="72" class="n-warn"/>
   <text x="748" y="152" class="t">4. Circuit Breaker</text>

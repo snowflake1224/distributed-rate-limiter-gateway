@@ -35,7 +35,7 @@
     <line x1="0" y1="500" x2="1120" y2="500" class="grid"/>
   </g>
 
-  <text x="32" y="38" class="h1">Distributed Rate Limiter &amp; API Gateway  System Architecture</text>
+  <text x="32" y="38" class="h1">Distributed Rate Limiter &amp; API Gateway &#8212; System Architecture</text>
   <text x="32" y="58" class="sub">Stateless Gateways + Atomic Redis Lua Limits + PostgreSQL Policies + Per-Instance Circuit Breakers</text>
 
   <rect x="32" y="130" width="170" height="104" class="card"/>
@@ -53,12 +53,12 @@
 
   <rect x="454" y="96" width="242" height="82" class="card-sky"/>
   <text x="472" y="122" class="box-title">gateway-1 (:3000)</text>
-  <text x="472" y="142" class="box-sub">SHA-256 key auth · TtlLruCache (5s)</text>
+  <text x="472" y="142" class="box-sub">SHA-256 key auth &#183; TtlLruCache (5s)</text>
   <text x="472" y="160" class="box-sub">Per-upstream CircuitBreaker</text>
 
   <rect x="454" y="196" width="242" height="82" class="card-sky"/>
   <text x="472" y="222" class="box-title">gateway-2 (:3002)</text>
-  <text x="472" y="242" class="box-sub">SHA-256 key auth · TtlLruCache (5s)</text>
+  <text x="472" y="242" class="box-sub">SHA-256 key auth &#183; TtlLruCache (5s)</text>
   <text x="472" y="260" class="box-sub">Per-upstream CircuitBreaker</text>
 
   <rect x="440" y="330" width="270" height="114" class="card"/>
@@ -72,7 +72,7 @@
   <text x="790" y="124" class="box-title">Redis 7 (Shared Limit Counters)</text>
   <text x="790" y="146" class="box-sub">token_bucket.lua (HSET tokens, ts + TIME)</text>
   <text x="790" y="164" class="box-sub">sliding_window.lua (ZREMRANGEBYSCORE + TIME)</text>
-  <text x="790" y="182" class="box-sub">200ms commandTimeout · fail_closed =&gt; 503</text>
+  <text x="790" y="182" class="box-sub">200ms commandTimeout &#183; fail_closed =&gt; 503</text>
   <rect x="790" y="192" width="275" height="20" class="pill"/>
   <text x="798" y="206" class="pill-text">rl:algo:tenant:policy:vN:&lt;sha256(dims)&gt;</text>
 
